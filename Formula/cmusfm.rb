@@ -3,6 +3,7 @@ class Cmusfm < Formula
   homepage "https://github.com/Arkq/cmusfm"
   url "https://github.com/Arkq/cmusfm/archive/v0.3.3.tar.gz"
   sha256 "9d9fa7df01c3dd7eecd72656e61494acc3b0111c07ddb18be0ad233110833b63"
+  revision 1
   head "https://github.com/Arkq/cmusfm.git"
 
   option "with-debug", "Enable debugging support"
@@ -43,6 +44,44 @@ class Cmusfm < Formula
   end
 
   test do
-    system "#{bin}/cmusfm"
+    cmus_home = testpath/".config/cmus"
+    cmusfm_conf = cmus_home/"cmusfm.conf"
+    cmusfm_sock = cmus_home/"cmusfm.socket"
+    cmusfm_cache = cmus_home/"cmusfm.cache"
+
+    cmusfm = bin/"cmusfm"
+    test_artist = "Test Artist"
+    test_title = "Test Title"
+    status_args = %W[
+      artist #{test_artist}
+      title #{test_title}
+      duration 31
+    ]
+
+    mkpath cmus_home
+    touch cmusfm_conf
+
+    begin
+      server = fork do
+        exec cmusfm, "server"
+      end
+      loop do
+        sleep 0.5
+        assert_equal nil, Process.wait(server, Process::WNOHANG)
+        break if cmusfm_sock.exist?
+      end
+
+      system cmusfm, "status", "playing", *status_args
+      sleep 31
+      system cmusfm, "status", "stopped", *status_args
+    ensure
+      Process.kill :TERM, server
+      Process.wait server
+    end
+
+    assert_predicate cmusfm_cache, :exist?
+    strings = shell_output "strings #{cmusfm_cache}"
+    assert_match /^#{test_artist}$/, strings
+    assert_match /^#{test_title}$/, strings
   end
 end
