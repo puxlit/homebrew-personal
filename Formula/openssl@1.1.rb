@@ -1,16 +1,11 @@
 class OpensslAT11 < Formula
   desc "Cryptography and SSL/TLS Toolkit"
   homepage "https://openssl.org/"
-  url "https://www.openssl.org/source/openssl-1.1.0i.tar.gz"
-  mirror "https://dl.bintray.com/homebrew/mirror/openssl@1.1--1.1.0i.tar.gz"
-  mirror "https://www.mirrorservice.org/sites/ftp.openssl.org/source/openssl-1.1.0i.tar.gz"
-  sha256 "ebbfc844a8c8cc0ea5dc10b86c9ce97f401837f3fa08c17b2cdadc118253cf99"
+  url "https://www.openssl.org/source/openssl-1.1.1.tar.gz"
+  mirror "https://dl.bintray.com/homebrew/mirror/openssl@1.1--1.1.1.tar.gz"
+  mirror "https://www.mirrorservice.org/sites/ftp.openssl.org/source/openssl-1.1.1.tar.gz"
+  sha256 "2836875a0f89c03d0fdf483941512613a50cfb421d6fd94b9f41d7279d586a3d"
   version_scheme 1
-
-  devel do
-    url "https://www.openssl.org/source/openssl-1.1.1-pre9.tar.gz"
-    sha256 "95ebdfbb05e8451fb01a186ccaa4a7da0eff9a48999ede9fe1a7d90db75ccb4c"
-  end
 
   keg_only :versioned_formula
 
@@ -115,10 +110,10 @@ end
 
 __END__
 diff --git a/apps/ca.c b/apps/ca.c
-index c69a2b5cdd..f22444b344 100644
+index 48f7cd1973..4cbb9933fe 100644
 --- a/apps/ca.c
 +++ b/apps/ca.c
-@@ -1074,6 +1074,20 @@ end_of_options:
+@@ -1082,6 +1082,20 @@ end_of_options:
                  goto end;
              }
  
@@ -139,7 +134,7 @@ index c69a2b5cdd..f22444b344 100644
          if (!crldays && !crlhours && !crlsec) {
              if (!NCONF_get_number(conf, section,
                                    ENV_DEFAULT_CRL_DAYS, &crldays))
-@@ -1110,6 +1124,11 @@ end_of_options:
+@@ -1118,6 +1132,11 @@ end_of_options:
  
          ASN1_TIME_free(tmptm);
  
