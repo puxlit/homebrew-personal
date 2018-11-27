@@ -1,20 +1,18 @@
 class OpensslAT11 < Formula
   desc "Cryptography and SSL/TLS Toolkit"
   homepage "https://openssl.org/"
-  url "https://www.openssl.org/source/openssl-1.1.1.tar.gz"
-  mirror "https://dl.bintray.com/homebrew/mirror/openssl@1.1--1.1.1.tar.gz"
-  mirror "https://www.mirrorservice.org/sites/ftp.openssl.org/source/openssl-1.1.1.tar.gz"
-  sha256 "2836875a0f89c03d0fdf483941512613a50cfb421d6fd94b9f41d7279d586a3d"
+  url "https://www.openssl.org/source/openssl-1.1.1a.tar.gz"
+  mirror "https://dl.bintray.com/homebrew/mirror/openssl@1.1--1.1.1a.tar.gz"
+  mirror "https://www.mirrorservice.org/sites/ftp.openssl.org/source/openssl-1.1.1a.tar.gz"
+  sha256 "fc20130f8b7cbd2fb918b2f14e2f429e109c31ddd0fb38fc5d71d9ffed3f9f41"
   version_scheme 1
 
   keg_only :versioned_formula
 
-  option "without-test", "Skip build-time tests (not recommended)"
-
   # Only needs 5.10 to run, but needs >5.13.4 to run the testsuite.
   # https://github.com/openssl/openssl/blob/4b16fa791d3ad8/README.PERL
   # The MacOS ML tag is same hack as the way we handle most :python deps.
-  depends_on "perl" if build.with?("test") && MacOS.version <= :mountain_lion
+  depends_on "perl" if MacOS.version <= :mountain_lion
 
   # SSLv2 died with 1.1.0, so no-ssl2 no longer required.
   # SSLv3 & zlib are off by default with 1.1.0 but this may not
@@ -51,7 +49,7 @@ class OpensslAT11 < Formula
     ENV.deparallelize
     system "perl", "./Configure", *(configure_args + arch_args)
     system "make"
-    system "make", "test" if build.with?("test")
+    system "make", "test"
     system "make", "install", "MANDIR=#{man}", "MANSUFFIX=ssl"
   end
 
@@ -110,10 +108,10 @@ end
 
 __END__
 diff --git a/apps/ca.c b/apps/ca.c
-index 48f7cd1973..4cbb9933fe 100644
+index 69207c0662..0b945d7b59 100644
 --- a/apps/ca.c
 +++ b/apps/ca.c
-@@ -1082,6 +1082,20 @@ end_of_options:
+@@ -1083,6 +1083,20 @@ end_of_options:
                  goto end;
              }
  
@@ -134,7 +132,7 @@ index 48f7cd1973..4cbb9933fe 100644
          if (!crldays && !crlhours && !crlsec) {
              if (!NCONF_get_number(conf, section,
                                    ENV_DEFAULT_CRL_DAYS, &crldays))
-@@ -1118,6 +1132,11 @@ end_of_options:
+@@ -1119,6 +1133,11 @@ end_of_options:
  
          ASN1_TIME_free(tmptm);
  
