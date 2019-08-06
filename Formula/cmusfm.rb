@@ -3,7 +3,7 @@ class Cmusfm < Formula
   homepage "https://github.com/Arkq/cmusfm"
   url "https://github.com/Arkq/cmusfm/archive/v0.3.3.tar.gz"
   sha256 "9d9fa7df01c3dd7eecd72656e61494acc3b0111c07ddb18be0ad233110833b63"
-  revision 4
+  revision 5
   head "https://github.com/Arkq/cmusfm.git"
 
   option "with-debug", "Enable debugging support"
@@ -138,18 +138,19 @@ end
 
 __END__
 diff --git a/src/libscrobbler2.c b/src/libscrobbler2.c
-index 86a8d2f..2dd776a 100644
+index 86a8d2f..33d1a62 100644
 --- a/src/libscrobbler2.c
 +++ b/src/libscrobbler2.c
-@@ -209,7 +209,7 @@ scrobbler_status_t scrobbler_scrobble(scrobbler_session_t *sbs,
- 		{"api_key", 's', api_key_hex},
- 		{"artist", 's', sbt->artist},
- 		/* {"context", 's', NULL}, */
--		{"duration", 'd', (void *)(long)sbt->duration},
-+		{"duration", 'd', sbt->duration <= 30 ? NULL : (void *)(long)sbt->duration},
- 		{"mbid", 's', sbt->mbid},
- 		{"method", 's', "track.scrobble"},
- 		{"sk", 's', sbs->session_key},
+@@ -228,6 +228,9 @@ scrobbler_status_t scrobbler_scrobble(scrobbler_session_t *sbs,
+ 	if (sbt->artist == NULL || sbt->track == NULL || sbt->timestamp == 0)
+ 		return sbs->status = SCROBBLER_STATUS_ERR_TRACKINF;
+ 
++	if (sbt->duration <= 30)
++		sb_data[4].data = NULL;
++
+ 	if ((curl = sb_curl_init(CURLOPT_POST, &response)) == NULL)
+ 		return sbs->status = SCROBBLER_STATUS_ERR_CURLINIT;
+ 
 diff --git a/src/server.c b/src/server.c
 index 80f5e5d..5c180cb 100644
 --- a/src/server.c
