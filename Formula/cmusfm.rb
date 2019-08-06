@@ -3,7 +3,7 @@ class Cmusfm < Formula
   homepage "https://github.com/Arkq/cmusfm"
   url "https://github.com/Arkq/cmusfm/archive/v0.3.3.tar.gz"
   sha256 "9d9fa7df01c3dd7eecd72656e61494acc3b0111c07ddb18be0ad233110833b63"
-  revision 2
+  revision 3
   head "https://github.com/Arkq/cmusfm.git"
 
   option "with-debug", "Enable debugging support"
@@ -14,6 +14,8 @@ class Cmusfm < Formula
   # depends_on "curl"     # libcurl
   # depends_on "openssl"  # libcrypto, for md5
   depends_on "libnotify" => :optional
+
+  patch :DATA
 
   def install
     args = %W[
@@ -133,3 +135,33 @@ class Cmusfm < Formula
     assert_match /^#{test_title}$/, strings
   end
 end
+
+__END__
+diff --git a/src/server.c b/src/server.c
+index 80f5e5d..5c180cb 100644
+--- a/src/server.c
++++ b/src/server.c
+@@ -147,19 +147,16 @@ static void cmusfm_server_process_data(scrobbler_session_t *sbs,
+ action_submit:
+ 		playtime += time(NULL) - unpaused;
+ 
+-		/* Track should be submitted if it is longer than 30 seconds and it has
+-		 * been played for at least half its duration (play time is greater than
+-		 * 15 seconds or 50% of the track duration respectively). Also the track
+-		 * should be submitted if the play time is greater than 4 minutes. */
++		/* Track should be submitted if it has been played for at least half its
++		 * duration (play time is greater than 15 seconds or 50% of the track
++		 * duration respectively). Also the track should be submitted if the
++		 * play time is greater than 4 minutes. */
+ 		if (started != 0 && (playtime > fulltime - playtime || playtime > 240)) {
+ 
+ 			/* playing duration is OK so submit track */
+ 			set_trackinfo(&sb_tinf, saved_record);
+ 			sb_tinf.timestamp = started;
+ 
+-			if (sb_tinf.duration <= 30)
+-				goto action_submit_skip;
+-
+ 			if ((saved_is_radio && !config.submit_shoutcast) ||
+ 					(!saved_is_radio && !config.submit_localfile)) {
+ 				/* skip submission if we don't want it */
