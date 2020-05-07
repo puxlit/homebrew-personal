@@ -1,26 +1,26 @@
 class OpensslAT11 < Formula
   desc "Cryptography and SSL/TLS Toolkit"
   homepage "https://openssl.org/"
-  url "https://www.openssl.org/source/openssl-1.1.1d.tar.gz"
-  mirror "https://dl.bintray.com/homebrew/mirror/openssl@1.1--1.1.1d.tar.gz"
-  mirror "https://www.mirrorservice.org/sites/ftp.openssl.org/source/openssl-1.1.1d.tar.gz"
-  sha256 "1e3a91bc1f9dfce01af26026f856e064eab4c8ee0a8f457b5ae30b40b8b711f2"
+  url "https://www.openssl.org/source/openssl-1.1.1g.tar.gz"
+  mirror "https://dl.bintray.com/homebrew/mirror/openssl-1.1.1g.tar.gz"
+  mirror "https://www.mirrorservice.org/sites/ftp.openssl.org/source/openssl-1.1.1g.tar.gz"
+  sha256 "ddb04774f1e32f0c49751e21b67216ac87852ceb056b75209af2443400636d46"
   version_scheme 1
 
-  keg_only :provided_by_macos,
-    "openssl/libressl is provided by macOS so don't link an incompatible version"
+  keg_only :shadowed_by_macos, "macOS provides LibreSSL"
 
   # SSLv2 died with 1.1.0, so no-ssl2 no longer required.
   # SSLv3 & zlib are off by default with 1.1.0 but this may not
   # be obvious to everyone, so explicitly state it for now to
   # help debug inevitable breakage.
-  def configure_args; %W[
-    --prefix=#{prefix}
-    --openssldir=#{openssldir}
-    no-ssl3
-    no-ssl3-method
-    no-zlib
-  ]
+  def configure_args
+    %W[
+      --prefix=#{prefix}
+      --openssldir=#{openssldir}
+      no-ssl3
+      no-ssl3-method
+      no-zlib
+    ]
   end
 
   patch :DATA
@@ -32,9 +32,7 @@ class OpensslAT11 < Formula
     # This ensures where Homebrew's Perl is needed the Cellar path isn't
     # hardcoded into OpenSSL's scripts, causing them to break every Perl update.
     # Whilst our env points to opt_bin, by default OpenSSL resolves the symlink.
-    if which("perl") == Formula["perl"].opt_bin/"perl"
-      ENV["PERL"] = Formula["perl"].opt_bin/"perl"
-    end
+    ENV["PERL"] = Formula["perl"].opt_bin/"perl" if which("perl") == Formula["perl"].opt_bin/"perl"
 
     arch_args = %w[darwin64-x86_64-cc enable-ec_nistp_64_gcc_128]
 
@@ -72,14 +70,15 @@ class OpensslAT11 < Formula
     (openssldir/"cert.pem").atomic_write(valid_certs.join("\n") << "\n")
   end
 
-  def caveats; <<~EOS
-    A CA file has been bootstrapped using certificates from the system
-    keychain. To add additional certificates, place .pem files in
-      #{openssldir}/certs
+  def caveats
+    <<~EOS
+      A CA file has been bootstrapped using certificates from the system
+      keychain. To add additional certificates, place .pem files in
+        #{openssldir}/certs
 
-    and run
-      #{opt_bin}/c_rehash
-  EOS
+      and run
+        #{opt_bin}/c_rehash
+    EOS
   end
 
   test do
