@@ -1,9 +1,9 @@
 class Cmusfm < Formula
   desc "Last.fm standalone scrobbler for the cmus music player"
   homepage "https://github.com/Arkq/cmusfm"
-  url "https://github.com/Arkq/cmusfm/archive/v0.3.3.tar.gz"
-  sha256 "9d9fa7df01c3dd7eecd72656e61494acc3b0111c07ddb18be0ad233110833b63"
-  revision 5
+  url "https://github.com/Arkq/cmusfm/archive/v0.4.1.tar.gz"
+  sha256 "ff5338d4b473a3e295f3ae4273fb097c0f79c42e3d803eefdf372b51dba606f2"
+  license "GPL-3.0-or-later"
   head "https://github.com/Arkq/cmusfm.git"
 
   option "with-debug", "Enable debugging support"
@@ -98,10 +98,11 @@ class Cmusfm < Formula
     cmusfm = bin/"cmusfm"
     test_artist = "Test Artist"
     test_title = "Test Title"
+    test_duration = 260
     status_args = %W[
       artist #{test_artist}
       title #{test_title}
-      duration 260
+      duration #{test_duration}
     ]
 
     mkpath cmus_home
@@ -122,7 +123,7 @@ class Cmusfm < Formula
 
       system cmusfm, "status", "playing", *status_args
       sleep 2
-      libfaketime_delta.atomic_write "260"
+      libfaketime_delta.atomic_write "#{test_duration}"
       system cmusfm, "status", "stopped", *status_args
     ensure
       Process.kill :TERM, server
@@ -131,31 +132,40 @@ class Cmusfm < Formula
 
     assert_predicate cmusfm_cache, :exist?
     strings = shell_output "strings #{cmusfm_cache}"
-    assert_match /^#{test_artist}$/, strings
-    assert_match /^#{test_title}$/, strings
+    assert_match(/^#{test_artist}$/, strings)
+    assert_match(/^#{test_title}$/, strings)
   end
 end
 
 __END__
 diff --git a/src/libscrobbler2.c b/src/libscrobbler2.c
-index 86a8d2f..33d1a62 100644
+index 05b368a..ec2126a 100644
 --- a/src/libscrobbler2.c
 +++ b/src/libscrobbler2.c
-@@ -228,6 +228,9 @@ scrobbler_status_t scrobbler_scrobble(scrobbler_session_t *sbs,
+@@ -274,7 +274,7 @@ scrobbler_status_t scrobbler_scrobble(scrobbler_session_t *sbs,
+ 	struct sb_response_data response;
+ 
+ 	/* data in alphabetical order sorted by name field (except api_sig) */
+-	const struct sb_request_data sb_data[] = {
++	struct sb_request_data sb_data[] = {
+ 		{ "album", SB_REQUEST_DATA_TYPE_STRING, { .s = sbt->album } },
+ 		{ "albumArtist", SB_REQUEST_DATA_TYPE_STRING, { .s = sbt->album_artist } },
+ 		{ "api_key", SB_REQUEST_DATA_TYPE_STRING, { .s = api_key_hex } },
+@@ -299,6 +299,9 @@ scrobbler_status_t scrobbler_scrobble(scrobbler_session_t *sbs,
  	if (sbt->artist == NULL || sbt->track == NULL || sbt->timestamp == 0)
  		return sbs->status = SCROBBLER_STATUS_ERR_TRACKINF;
  
 +	if (sbt->duration <= 30)
-+		sb_data[4].data = NULL;
++		sb_data[4].value.n = 0;
 +
  	if ((curl = sb_curl_init(CURLOPT_POST, &response)) == NULL)
  		return sbs->status = SCROBBLER_STATUS_ERR_CURLINIT;
  
 diff --git a/src/server.c b/src/server.c
-index 80f5e5d..5c180cb 100644
+index 3a80be8..e4902aa 100644
 --- a/src/server.c
 +++ b/src/server.c
-@@ -147,19 +147,16 @@ static void cmusfm_server_process_data(scrobbler_session_t *sbs,
+@@ -169,19 +169,16 @@ static void cmusfm_server_process_data(scrobbler_session_t *sbs,
  action_submit:
  		playtime += time(NULL) - unpaused;
  
